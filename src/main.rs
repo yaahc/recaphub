@@ -12,8 +12,8 @@ struct Args {
     name: String,
 
     /// Timeframe to query against in days
-    #[clap(short, long)]
-    days: u64,
+    #[clap(short, long, parse(try_from_str = humantime::parse_duration))]
+    timeframe: std::time::Duration,
 
     /// Github personal access token
     #[clap(short, long, env = "GITHUB_TOKEN")]
@@ -60,7 +60,7 @@ impl ActivityTimeframe {
             .personal_token(args.github_token)
             .build()?;
 
-        let cutoff = Utc::now() - Duration::days(args.days as _);
+        let cutoff = Utc::now() - Duration::from_std(args.timeframe)?;
         let query = format!(
             "involves:{} sort:updated-desc updated:>={}",
             args.name,
