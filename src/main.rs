@@ -48,6 +48,7 @@ async fn main() -> eyre::Result<()> {
 struct ActivityTimeframe {
     octocrab: Octocrab,
     cutoff: DateTime<Utc>,
+    name: String,
     current_page: Option<Page<Issue>>,
 }
 
@@ -76,6 +77,7 @@ impl ActivityTimeframe {
         Ok(Self {
             octocrab,
             cutoff,
+            name: args.name,
             current_page: Some(first_page),
         })
     }
@@ -112,7 +114,7 @@ impl ActivityTimeframe {
 
         Ok(comments
             .into_iter()
-            .filter(|comment| comment.user.login == "yaahc")
+            .filter(|comment| comment.user.login == self.name)
             .map(|comment| comment.html_url)
             .collect())
     }
