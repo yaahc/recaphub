@@ -13,3 +13,4 @@ color-eyre = "0.6.1"
 octocrab = "0.15.4"
 tokio = { version = "1.17.0", features = ["full"] }
 url = "2.2.2"
+humantime = "2.1.0"
