@@ -54,6 +54,8 @@ struct ActivityTimeframe {
 
 impl ActivityTimeframe {
     async fn from_args() -> eyre::Result<Self> {
+        // not an error if dotenv isn't present, so completely discard the results
+        let _ = dotenv::dotenv();
         let args = Args::parse();
 
         let octocrab = octocrab::Octocrab::builder()
