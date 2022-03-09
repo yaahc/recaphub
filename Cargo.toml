@@ -1,0 +1,15 @@
+[package]
+name = "recaphub"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.19"
+clap = { version = "3.1.6", features = ["derive", "env"] }
+cld = "0.4.1"
+color-eyre = "0.6.1"
+octocrab = "0.15.4"
+tokio = { version = "1.17.0", features = ["full"] }
+url = "2.2.2"
