@@ -121,7 +121,7 @@ impl ActivityTimeframe {
             .expect("issue numbers are always positive");
 
         let octocrab = self.octocrab.clone();
-        let cutoff = self.cutoff.clone();
+        let cutoff = self.cutoff;
         let owner = issue.owner().to_string();
         let repo = issue.repo().to_string();
         let name = self.name.clone();
@@ -162,9 +162,7 @@ impl IssueExt for Issue {
         self.repository_url
             .path_segments()
             .expect("repo urls will always have some path segments")
-            .rev()
-            .skip(1)
-            .next()
+            .rev().nth(1)
             .expect("the second to last path segment of a repo url is always the owner name")
     }
 }
