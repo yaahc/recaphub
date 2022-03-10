@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use chrono::{DateTime, Duration, Utc};
 use clap::Parser;
 use color_eyre::eyre;
@@ -26,9 +28,19 @@ async fn main() -> eyre::Result<()> {
 
     let mut timeframe = ActivityTimeframe::from_args().await?;
 
+    let mut comment_summaries = vec![];
     while let Some(issue) = timeframe.next_issue().await {
         let issue = issue?;
-        let comments = timeframe.comments_within(&issue).await?;
+        let comments = timeframe.comments_within(&issue);
+        let comment_summary_handle = tokio::spawn(async move {
+            let comments = comments.await?;
+            Ok::<_, eyre::Report>((issue, comments))
+        });
+        comment_summaries.push(comment_summary_handle);
+    }
+
+    for handle in comment_summaries {
+        let (issue, comments) = handle.await??;
         if comments.is_empty() {
             continue;
         }
@@ -64,7 +76,7 @@ impl ActivityTimeframe {
 
         let cutoff = Utc::now() - Duration::from_std(args.timeframe)?;
         let query = format!(
-            "involves:{} sort:updated-desc updated:>={}",
+            "involves:{} sort:created-asc updated:>={}",
             args.name,
             cutoff.date().naive_utc()
         );
@@ -99,26 +111,35 @@ impl ActivityTimeframe {
         page.items.pop().map(Ok)
     }
 
-    async fn comments_within(&self, issue: &Issue) -> eyre::Result<Vec<url::Url>> {
+    fn comments_within(
+        &self,
+        issue: &Issue,
+    ) -> impl Future<Output = eyre::Result<Vec<url::Url>>> + 'static {
         let issue_num = issue
             .number
             .try_into()
             .expect("issue numbers are always positive");
 
-        let comments = self
-            .octocrab
-            .issues(issue.owner(), issue.repo())
-            .list_comments(issue_num)
-            .since(self.cutoff)
-            .per_page(100)
-            .send()
-            .await?;
+        let octocrab = self.octocrab.clone();
+        let cutoff = self.cutoff.clone();
+        let owner = issue.owner().to_string();
+        let repo = issue.repo().to_string();
+        let name = self.name.clone();
+        async move {
+            let comments = octocrab
+                .issues(owner, repo)
+                .list_comments(issue_num)
+                .since(cutoff)
+                .per_page(100)
+                .send()
+                .await?;
 
-        Ok(comments
-            .into_iter()
-            .filter(|comment| comment.user.login == self.name)
-            .map(|comment| comment.html_url)
-            .collect())
+            Ok(comments
+                .into_iter()
+                .filter(|comment| comment.user.login == name)
+                .map(|comment| comment.html_url)
+                .collect())
+        }
     }
 }
 
