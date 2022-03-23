@@ -7,6 +7,10 @@ This is a quick helper CLI I wrote to help me track what I've been working on.
 
 This tool requires that you setup a personal access token. You can create one by going to `Settings > Developer Settings (this is on the bottom of the sidebar on the left) > Personal Access Tokens`
 
+For convenience this crate uses `dotenv` to allow you to persistently load your personal access token.
+
+To use this, create a `.env` file containing `GITHUB_TOKEN=<your personal access token>`.
+
 ### Output
 
 Here's a sample of the kind of output it generates. This output will change
