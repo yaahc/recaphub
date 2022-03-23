@@ -3,6 +3,12 @@ recaphub
 
 This is a quick helper CLI I wrote to help me track what I've been working on.
 
+### Setup
+
+This tool requires that you setup a personal access token. You can create one by going to `Settings > Developer Settings (this is on the bottom of the sidebar on the left) > Personal Access Tokens`
+
+### Output
+
 Here's a sample of the kind of output it generates. This output will change
 over time as I update it to be more comprehensive with its analysis. Off of the
 top of my head I'd like it to also check Zulip threads that I've participated
