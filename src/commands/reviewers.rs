@@ -29,6 +29,22 @@ pub struct Reviewers {
     /// Users to filter out of results
     #[clap(short, long)]
     ignored_user: Vec<String>,
+
+    /// Also include PR comments and reviews by the author of the given PR
+    #[clap(long)]
+    include_authors_prs: bool,
+
+    /// Filter out users who have fewer than the given number of comments
+    #[clap(long)]
+    min_comments: Option<usize>,
+
+    /// Filter out users who have fewer than the given number of review comments
+    #[clap(long)]
+    min_review_comments: Option<usize>,
+
+    /// Filter out users who have participated in fewer than the given number of PRs
+    #[clap(long)]
+    min_prs_participated_in: Option<usize>,
 }
 
 impl Reviewers {
@@ -81,6 +97,24 @@ impl Reviewers {
 
         println!("# Review Summary:");
         for contributor in stats.into_iter().rev() {
+            if let Some(min_comments) = self.min_comments {
+                if contributor.1.num_comments < min_comments {
+                    continue;
+                }
+            }
+
+            if let Some(min_review_comments) = self.min_review_comments {
+                if contributor.1.num_review_comments < min_review_comments {
+                    continue;
+                }
+            }
+
+            if let Some(min_prs_participated_in) = self.min_prs_participated_in {
+                if contributor.1.prs_participated_in < min_prs_participated_in {
+                    continue;
+                }
+            }
+
             println!(
                 "- {} left {} comments and {} review comments in {} PRs",
                 contributor.0,
@@ -176,12 +210,19 @@ impl Reviewers {
         let comments = tokio::spawn(self.comments_within(issue));
         let reviews = tokio::spawn(self.review_comments_within(issue));
         let ignored_users = self.ignored_user.clone();
+        let include_authors_prs = self.include_authors_prs;
+        let author_name = issue.user.login.clone();
+
         async move {
             let mut stats = PullReviewStats::default();
             let comments = comments.await??;
             for comment in comments {
                 let name = comment.user.login;
                 if ignored_users.contains(&name) {
+                    continue;
+                }
+
+                if !include_authors_prs && name == author_name {
                     continue;
                 }
 
@@ -197,6 +238,11 @@ impl Reviewers {
                 if ignored_users.contains(&name) {
                     continue;
                 }
+
+                if !include_authors_prs && name == author_name {
+                    continue;
+                }
+
                 stats
                     .0
                     .entry(name)
